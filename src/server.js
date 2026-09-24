@@ -2,6 +2,9 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
+const db = require("./db");
+const { runSeed } = require("./db/seed");
+
 const authRoutes = require("./routes/auth");
 const productRoutes = require("./routes/products");
 const cartRoutes = require("./routes/cart");
@@ -48,6 +51,12 @@ app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: "Something went wrong on the server." });
 });
+
+const productCount = db.prepare("SELECT COUNT(*) as count FROM products").get().count;
+if (productCount === 0) {
+  console.log("Empty database detected — running initial seed automatically...");
+  runSeed();
+}
 
 app.listen(PORT, () => {
   console.log(`Clearsight API running on http://localhost:${PORT}`);

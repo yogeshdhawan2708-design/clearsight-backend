@@ -76,56 +76,68 @@ const products = [
   }
 ];
 
-const insert = db.prepare(`
-  INSERT OR REPLACE INTO products
-  (id, name, category, shape, frame_material, gender, price, mrp, color, rating, reviews, image, overlay_image, power_type, description)
-  VALUES (@id, @name, @category, @shape, @frame_material, @gender, @price, @mrp, @color, @rating, @reviews, @image, @overlay_image, @power_type, @description)
-`);
+function runSeed() {
+  const insert = db.prepare(`
+    INSERT OR REPLACE INTO products
+    (id, name, category, shape, frame_material, gender, price, mrp, color, rating, reviews, image, overlay_image, power_type, description)
+    VALUES (@id, @name, @category, @shape, @frame_material, @gender, @price, @mrp, @color, @rating, @reviews, @image, @overlay_image, @power_type, @description)
+  `);
 
-const insertMany = db.transaction((rows) => {
-  for (const row of rows) insert.run(row);
-});
+  const insertMany = db.transaction((rows) => {
+    for (const row of rows) insert.run(row);
+  });
 
-insertMany(products);
-console.log(`Seeded ${products.length} products.`);
+  insertMany(products);
+  console.log(`Seeded ${products.length} products.`);
 
-const lensOptions = [
-  { id: "lens-standard", name: "Standard Single Vision", type: "single-vision", price: 0, description: "Basic clear lenses, included with frame price." },
-  { id: "lens-bluecut", name: "Blue Light Block", type: "single-vision", price: 499, description: "Filters blue-violet light from screens, reduces digital eye strain." },
-  { id: "lens-antiglare", name: "Anti-Glare / Anti-Reflective", type: "single-vision", price: 399, description: "Cuts down glare and reflections for night driving and screen use." },
-  { id: "lens-thin", name: "Thin & Light (1.6 index)", type: "single-vision", price: 899, description: "Thinner, lighter lenses for higher power prescriptions." },
-  { id: "lens-progressive", name: "Progressive (No-Line Bifocal)", type: "progressive", price: 2499, description: "Seamless near, intermediate, and distance vision in one lens." },
-  { id: "lens-sunglass-polarized", name: "Polarized Sun Lens", type: "sunglasses", price: 0, description: "Polarized coating included with sunglass frames." }
-];
-const insertLens = db.prepare(`INSERT OR REPLACE INTO lens_options (id, name, type, price, description) VALUES (@id, @name, @type, @price, @description)`);
-db.transaction((rows) => { for (const r of rows) insertLens.run(r); })(lensOptions);
-console.log(`Seeded ${lensOptions.length} lens options.`);
+  const lensOptions = [
+    { id: "lens-standard", name: "Standard Single Vision", type: "single-vision", price: 0, description: "Basic clear lenses, included with frame price." },
+    { id: "lens-bluecut", name: "Blue Light Block", type: "single-vision", price: 499, description: "Filters blue-violet light from screens, reduces digital eye strain." },
+    { id: "lens-antiglare", name: "Anti-Glare / Anti-Reflective", type: "single-vision", price: 399, description: "Cuts down glare and reflections for night driving and screen use." },
+    { id: "lens-thin", name: "Thin & Light (1.6 index)", type: "single-vision", price: 899, description: "Thinner, lighter lenses for higher power prescriptions." },
+    { id: "lens-progressive", name: "Progressive (No-Line Bifocal)", type: "progressive", price: 2499, description: "Seamless near, intermediate, and distance vision in one lens." },
+    { id: "lens-sunglass-polarized", name: "Polarized Sun Lens", type: "sunglasses", price: 0, description: "Polarized coating included with sunglass frames." }
+  ];
+  const insertLens = db.prepare(`INSERT OR REPLACE INTO lens_options (id, name, type, price, description) VALUES (@id, @name, @type, @price, @description)`);
+  db.transaction((rows) => { for (const r of rows) insertLens.run(r); })(lensOptions);
+  console.log(`Seeded ${lensOptions.length} lens options.`);
 
-const coupons = [
-  { code: "WELCOME200", discount_type: "flat", discount_value: 200, min_order: 999, active: 1, expires_at: null },
-  { code: "SAVE15", discount_type: "percent", discount_value: 15, min_order: 1500, active: 1, expires_at: null },
-  { code: "KIDS100", discount_type: "flat", discount_value: 100, min_order: 500, active: 1, expires_at: null }
-];
-const insertCoupon = db.prepare(`INSERT OR REPLACE INTO coupons (code, discount_type, discount_value, min_order, active, expires_at) VALUES (@code, @discount_type, @discount_value, @min_order, @active, @expires_at)`);
-db.transaction((rows) => { for (const r of rows) insertCoupon.run(r); })(coupons);
-console.log(`Seeded ${coupons.length} coupons.`);
+  const coupons = [
+    { code: "WELCOME200", discount_type: "flat", discount_value: 200, min_order: 999, active: 1, expires_at: null },
+    { code: "SAVE15", discount_type: "percent", discount_value: 15, min_order: 1500, active: 1, expires_at: null },
+    { code: "KIDS100", discount_type: "flat", discount_value: 100, min_order: 500, active: 1, expires_at: null }
+  ];
+  const insertCoupon = db.prepare(`INSERT OR REPLACE INTO coupons (code, discount_type, discount_value, min_order, active, expires_at) VALUES (@code, @discount_type, @discount_value, @min_order, @active, @expires_at)`);
+  db.transaction((rows) => { for (const r of rows) insertCoupon.run(r); })(coupons);
+  console.log(`Seeded ${coupons.length} coupons.`);
 
-const stores = [
-  { name: "Clearsight Connaught Place", city: "Delhi", address: "Shop 14, Inner Circle, Connaught Place, New Delhi", phone: "011-4000-1234", hours: "10:00 AM - 9:00 PM", lat: 28.6315, lng: 77.2167 },
-  { name: "Clearsight Cyber Hub", city: "Gurgaon", address: "Ground Floor, Cyber Hub, DLF Phase 2, Gurgaon", phone: "0124-400-5678", hours: "11:00 AM - 10:00 PM", lat: 28.4949, lng: 77.0890 },
-  { name: "Clearsight Indiranagar", city: "Bengaluru", address: "100 Feet Road, Indiranagar, Bengaluru", phone: "080-4000-9012", hours: "10:30 AM - 9:30 PM", lat: 12.9716, lng: 77.6412 }
-];
-const insertStore = db.prepare(`INSERT INTO stores (name, city, address, phone, hours, lat, lng) VALUES (@name, @city, @address, @phone, @hours, @lat, @lng)`);
-db.transaction((rows) => { for (const r of rows) insertStore.run(r); })(stores);
-console.log(`Seeded ${stores.length} stores.`);
+  const existingStores = db.prepare("SELECT COUNT(*) as count FROM stores").get();
+  if (existingStores.count === 0) {
+    const stores = [
+      { name: "Clearsight Connaught Place", city: "Delhi", address: "Shop 14, Inner Circle, Connaught Place, New Delhi", phone: "011-4000-1234", hours: "10:00 AM - 9:00 PM", lat: 28.6315, lng: 77.2167 },
+      { name: "Clearsight Cyber Hub", city: "Gurgaon", address: "Ground Floor, Cyber Hub, DLF Phase 2, Gurgaon", phone: "0124-400-5678", hours: "11:00 AM - 10:00 PM", lat: 28.4949, lng: 77.0890 },
+      { name: "Clearsight Indiranagar", city: "Bengaluru", address: "100 Feet Road, Indiranagar, Bengaluru", phone: "080-4000-9012", hours: "10:30 AM - 9:30 PM", lat: 12.9716, lng: 77.6412 }
+    ];
+    const insertStore = db.prepare(`INSERT INTO stores (name, city, address, phone, hours, lat, lng) VALUES (@name, @city, @address, @phone, @hours, @lat, @lng)`);
+    db.transaction((rows) => { for (const r of rows) insertStore.run(r); })(stores);
+    console.log(`Seeded ${stores.length} stores.`);
+  }
 
-const adminEmail = "admin@clearsight.test";
-const existingAdmin = db.prepare("SELECT id FROM users WHERE email = ?").get(adminEmail);
-if (!existingAdmin) {
-  const hash = bcrypt.hashSync("Admin@123", 10);
-  db.prepare("INSERT INTO users (name, email, password_hash, is_admin) VALUES (?, ?, ?, 1)").run("Store Admin", adminEmail, hash);
-  console.log(`Seeded admin user: ${adminEmail} / Admin@123`);
-} else {
-  db.prepare("UPDATE users SET is_admin = 1 WHERE email = ?").run(adminEmail);
-  console.log(`Admin user already exists: ${adminEmail}`);
+  const adminEmail = "admin@clearsight.test";
+  const existingAdmin = db.prepare("SELECT id FROM users WHERE email = ?").get(adminEmail);
+  if (!existingAdmin) {
+    const hash = bcrypt.hashSync("Admin@123", 10);
+    db.prepare("INSERT INTO users (name, email, password_hash, is_admin) VALUES (?, ?, ?, 1)").run("Store Admin", adminEmail, hash);
+    console.log(`Seeded admin user: ${adminEmail} / Admin@123`);
+  } else {
+    db.prepare("UPDATE users SET is_admin = 1 WHERE email = ?").run(adminEmail);
+    console.log(`Admin user already exists: ${adminEmail}`);
+  }
+}
+
+module.exports = { runSeed };
+
+// Allow `npm run seed` / `node src/db/seed.js` to keep working directly.
+if (require.main === module) {
+  runSeed();
 }
