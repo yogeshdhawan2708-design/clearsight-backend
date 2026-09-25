@@ -110,4 +110,95 @@ router.delete("/coupons/:code", (req, res) => {
   res.json({ success: true });
 });
 
+// ---- Memberships ----
+
+router.get("/memberships", (req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT um.*, u.name as user_name, u.email as user_email, mp.name as plan_name
+       FROM user_memberships um
+       JOIN users u ON u.id = um.user_id
+       JOIN membership_plans mp ON mp.id = um.plan_id
+       ORDER BY um.purchased_at DESC`
+    )
+    .all();
+  res.json({ memberships: rows });
+});
+
+// ---- Home Eye Test bookings ----
+
+const BOOKING_STATUSES = ["requested", "confirmed", "completed", "cancelled"];
+
+router.get("/home-test", (req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT htb.*, u.email as user_email
+       FROM home_test_bookings htb
+       JOIN users u ON u.id = htb.user_id
+       ORDER BY htb.created_at DESC`
+    )
+    .all();
+  res.json({ bookings: rows });
+});
+
+router.patch("/home-test/:id/status", (req, res) => {
+  const { status } = req.body;
+  if (!BOOKING_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `Status must be one of: ${BOOKING_STATUSES.join(", ")}` });
+  }
+  const result = db.prepare("UPDATE home_test_bookings SET status = ? WHERE id = ?").run(status, req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: "Booking not found." });
+  res.json({ booking: db.prepare("SELECT * FROM home_test_bookings WHERE id = ?").get(req.params.id) });
+});
+
+// ---- Insurance claims ----
+
+const CLAIM_STATUSES = ["submitted", "approved", "rejected", "settled"];
+
+router.get("/insurance-claims", (req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT ic.*, u.email as user_email
+       FROM insurance_claims ic
+       JOIN users u ON u.id = ic.user_id
+       ORDER BY ic.created_at DESC`
+    )
+    .all();
+  res.json({ claims: rows });
+});
+
+router.patch("/insurance-claims/:id/status", (req, res) => {
+  const { status } = req.body;
+  if (!CLAIM_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `Status must be one of: ${CLAIM_STATUSES.join(", ")}` });
+  }
+  const result = db.prepare("UPDATE insurance_claims SET status = ? WHERE id = ?").run(status, req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: "Claim not found." });
+  res.json({ claim: db.prepare("SELECT * FROM insurance_claims WHERE id = ?").get(req.params.id) });
+});
+
+// ---- Warranty claims ----
+
+router.get("/warranty-claims", (req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT wc.*, u.email as user_email
+       FROM warranty_claims wc
+       JOIN users u ON u.id = wc.user_id
+       ORDER BY wc.created_at DESC`
+    )
+    .all();
+  res.json({ claims: rows });
+});
+
+router.patch("/warranty-claims/:id/status", (req, res) => {
+  const { status } = req.body;
+  if (!CLAIM_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `Status must be one of: ${CLAIM_STATUSES.join(", ")}` });
+  }
+  const result = db.prepare("UPDATE warranty_claims SET status = ? WHERE id = ?").run(status, req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: "Claim not found." });
+  res.json({ claim: db.prepare("SELECT * FROM warranty_claims WHERE id = ?").get(req.params.id) });
+});
+
 module.exports = router;

@@ -14,6 +14,7 @@ db.exec(`
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     is_admin INTEGER NOT NULL DEFAULT 0,
+    lk_cash_balance INTEGER NOT NULL DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -66,6 +67,9 @@ db.exec(`
     shipping INTEGER NOT NULL,
     discount INTEGER NOT NULL DEFAULT 0,
     coupon_code TEXT,
+    membership_discount INTEGER NOT NULL DEFAULT 0,
+    insurance_opted INTEGER NOT NULL DEFAULT 0,
+    insurance_amount INTEGER NOT NULL DEFAULT 0,
     total INTEGER NOT NULL,
     payment_method TEXT NOT NULL,
     status TEXT DEFAULT 'placed',
@@ -154,6 +158,72 @@ db.exec(`
     type TEXT NOT NULL DEFAULT 'return',
     reason TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'requested',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+  CREATE TABLE IF NOT EXISTS membership_plans (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    bogo INTEGER NOT NULL DEFAULT 1,
+    cashback_first_pct INTEGER NOT NULL DEFAULT 0,
+    cashback_after_pct INTEGER NOT NULL DEFAULT 0,
+    free_lens_replacement INTEGER NOT NULL DEFAULT 0,
+    description TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS user_memberships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    plan_id TEXT NOT NULL,
+    purchased_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    expires_at TEXT NOT NULL,
+    orders_used_this_month INTEGER NOT NULL DEFAULT 0,
+    orders_used_this_year INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'active',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (plan_id) REFERENCES membership_plans(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS home_test_bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    address TEXT NOT NULL,
+    city TEXT NOT NULL,
+    pincode TEXT NOT NULL,
+    preferred_date TEXT NOT NULL,
+    preferred_slot TEXT NOT NULL,
+    family_members INTEGER NOT NULL DEFAULT 1,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'requested',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS insurance_claims (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    photo_data_url TEXT,
+    status TEXT NOT NULL DEFAULT 'submitted',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS warranty_claims (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    order_item_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    issue_type TEXT NOT NULL,
+    description TEXT NOT NULL,
+    photo_data_url TEXT,
+    status TEXT NOT NULL DEFAULT 'submitted',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

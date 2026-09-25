@@ -17,6 +17,10 @@ const reviewRoutes = require("./routes/reviews");
 const storeRoutes = require("./routes/stores");
 const returnRoutes = require("./routes/returns");
 const adminRoutes = require("./routes/admin");
+const membershipRoutes = require("./routes/memberships");
+const homeTestRoutes = require("./routes/homeTest");
+const insuranceRoutes = require("./routes/insurance");
+const warrantyRoutes = require("./routes/warranty");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -40,6 +44,10 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/stores", storeRoutes);
 app.use("/api/returns", returnRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/memberships", membershipRoutes);
+app.use("/api/home-test", homeTestRoutes);
+app.use("/api/insurance", insuranceRoutes);
+app.use("/api/warranty", warrantyRoutes);
 
 // 404 handler
 app.use((req, res) => {

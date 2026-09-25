@@ -8,10 +8,10 @@ router.use(requireAuth);
 const FREE_SHIPPING_THRESHOLD = 999;
 const SHIPPING_FEE = 79;
 
-// POST /api/orders  { name, phone, address, city, pincode, paymentMethod, couponCode }
+// POST /api/orders  { name, phone, address, city, pincode, paymentMethod, couponCode, insuranceOpted, redeemLkCash }
 // Reads the user's current cart, creates an order snapshot, clears the cart.
 router.post("/", (req, res) => {
-  const { name, phone, address, city, pincode, paymentMethod = "cod", couponCode } = req.body;
+  const { name, phone, address, city, pincode, paymentMethod = "cod", couponCode, insuranceOpted = false, redeemLkCash = false } = req.body;
 
   if (!name || !phone || !address || !city || !pincode) {
     return res.status(400).json({ error: "Full delivery address is required." });
@@ -21,7 +21,7 @@ router.post("/", (req, res) => {
     .prepare(
       `SELECT ci.power, ci.qty, ci.lens_option_id, ci.prescription_id,
               lo.name AS lens_name, lo.price AS lens_price,
-              p.id as product_id, p.name as product_name, p.price
+              p.id as product_id, p.name as product_name, p.price, p.category
        FROM cart_items ci
        JOIN products p ON p.id = ci.product_id
        LEFT JOIN lens_options lo ON lo.id = ci.lens_option_id
@@ -45,17 +45,49 @@ router.post("/", (req, res) => {
     }
   }
 
+  // Membership: BOGO on eyeglasses/sunglasses (cheapest eligible unit made free)
+  const membership = db
+    .prepare(
+      `SELECT um.*, mp.bogo, mp.cashback_first_pct, mp.cashback_after_pct
+       FROM user_memberships um JOIN membership_plans mp ON mp.id = um.plan_id
+       WHERE um.user_id = ? AND um.status = 'active' AND um.expires_at > datetime('now')
+       ORDER BY um.purchased_at DESC LIMIT 1`
+    )
+    .get(req.userId);
+
+  let bogoDiscount = 0;
+  if (membership && membership.bogo) {
+    const eligibleUnits = [];
+    for (const r of cartRows) {
+      if (r.category === "Eyeglasses" || r.category === "Sunglasses") {
+        for (let i = 0; i < r.qty; i++) eligibleUnits.push(r.price + (r.lens_price || 0));
+      }
+    }
+    if (eligibleUnits.length >= 2) {
+      bogoDiscount = Math.min(...eligibleUnits);
+      discount += bogoDiscount;
+    }
+  }
+
+  // LK Cash redemption: up to 10% of subtotal, capped by balance
+  let lkCashRedeemed = 0;
+  if (redeemLkCash) {
+    const user = db.prepare("SELECT lk_cash_balance FROM users WHERE id = ?").get(req.userId);
+    lkCashRedeemed = Math.min(user.lk_cash_balance, Math.floor(subtotal * 0.1));
+  }
+
+  const insuranceAmount = insuranceOpted ? 199 : 0;
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
-  const total = Math.max(subtotal + shipping - discount, 0);
+  const total = Math.max(subtotal + shipping + insuranceAmount - discount - lkCashRedeemed, 0);
 
   const createOrder = db.transaction(() => {
     const orderResult = db
       .prepare(
         `INSERT INTO orders
-         (user_id, subtotal, shipping, discount, coupon_code, total, payment_method, ship_name, ship_phone, ship_address, ship_city, ship_pincode)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         (user_id, subtotal, shipping, discount, coupon_code, insurance_opted, insurance_amount, total, payment_method, ship_name, ship_phone, ship_address, ship_city, ship_pincode)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .run(req.userId, subtotal, shipping, discount, appliedCouponCode, total, paymentMethod, name, phone, address, city, pincode);
+      .run(req.userId, subtotal, shipping, discount, appliedCouponCode, insuranceOpted ? 1 : 0, insuranceAmount, total, paymentMethod, name, phone, address, city, pincode);
 
     const orderId = orderResult.lastInsertRowid;
 
@@ -69,13 +101,26 @@ router.post("/", (req, res) => {
 
     db.prepare("DELETE FROM cart_items WHERE user_id = ?").run(req.userId);
 
+    // Deduct redeemed LK Cash, then credit membership cashback on the final total (simplified: credited immediately, not after 30 days as in the real Lenskart policy)
+    if (lkCashRedeemed > 0) {
+      db.prepare("UPDATE users SET lk_cash_balance = lk_cash_balance - ? WHERE id = ?").run(lkCashRedeemed, req.userId);
+    }
+    if (membership && (membership.cashback_first_pct > 0 || membership.cashback_after_pct > 0)) {
+      const priorOrderCount = db.prepare("SELECT COUNT(*) as c FROM orders WHERE user_id = ? AND id != ?").get(req.userId, orderId).c;
+      const pct = priorOrderCount === 0 ? membership.cashback_first_pct : membership.cashback_after_pct;
+      const cashbackAmount = Math.round((total * pct) / 100);
+      if (cashbackAmount > 0) {
+        db.prepare("UPDATE users SET lk_cash_balance = lk_cash_balance + ? WHERE id = ?").run(cashbackAmount, req.userId);
+      }
+    }
+
     return orderId;
   });
 
   const orderId = createOrder();
   const order = getOrderById(orderId, req.userId);
 
-  res.status(201).json({ order });
+  res.status(201).json({ order, bogoDiscount, lkCashRedeemed });
 });
 
 function getOrderById(orderId, userId) {
@@ -94,6 +139,8 @@ function getOrderById(orderId, userId) {
     shipping: order.shipping,
     discount: order.discount,
     couponCode: order.coupon_code,
+    insuranceOpted: !!order.insurance_opted,
+    insuranceAmount: order.insurance_amount,
     total: order.total,
     paymentMethod: order.payment_method,
     status: order.status,

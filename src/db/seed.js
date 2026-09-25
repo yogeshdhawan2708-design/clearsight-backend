@@ -123,6 +123,15 @@ function runSeed() {
     console.log(`Seeded ${stores.length} stores.`);
   }
 
+  const membershipPlans = [
+    { id: "gold", name: "Gold", price: 500, bogo: 1, cashback_first_pct: 0, cashback_after_pct: 0, free_lens_replacement: 0, description: "Buy 1 Get 1 Free on eyeglasses & sunglasses, extra 10% off Aqualens, discount on progressive lenses. Valid 365 days." },
+    { id: "gold-max", name: "Gold Max", price: 800, bogo: 1, cashback_first_pct: 10, cashback_after_pct: 5, free_lens_replacement: 0, description: "Everything in Gold, plus LK Cash+ cashback: 10% on your first order, 5% after. Valid 365 days." },
+    { id: "gold-max-pro", name: "Gold Max Pro", price: 0, bogo: 1, cashback_first_pct: 10, cashback_after_pct: 5, free_lens_replacement: 1, description: "Everything in Gold Max, plus one free lens replacement (₹199 fitting fee applies). Priced as a % of your cart at checkout." }
+  ];
+  const insertPlan = db.prepare(`INSERT OR REPLACE INTO membership_plans (id, name, price, bogo, cashback_first_pct, cashback_after_pct, free_lens_replacement, description) VALUES (@id, @name, @price, @bogo, @cashback_first_pct, @cashback_after_pct, @free_lens_replacement, @description)`);
+  db.transaction((rows) => { for (const r of rows) insertPlan.run(r); })(membershipPlans);
+  console.log(`Seeded ${membershipPlans.length} membership plans.`);
+
   const adminEmail = "admin@clearsight.test";
   const existingAdmin = db.prepare("SELECT id FROM users WHERE email = ?").get(adminEmail);
   if (!existingAdmin) {
