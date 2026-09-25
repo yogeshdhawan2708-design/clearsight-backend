@@ -33,7 +33,10 @@ db.exec(`
     image TEXT,
     overlay_image TEXT,
     power_type TEXT,
-    description TEXT
+    description TEXT,
+    sizes TEXT DEFAULT 'S,M,L',
+    color_variants TEXT,
+    stock_status TEXT DEFAULT 'in_stock'
   );
 
   CREATE TABLE IF NOT EXISTS cart_items (

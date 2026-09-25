@@ -21,7 +21,10 @@ function serializeProduct(row) {
     image: row.image,
     overlayImage: row.overlay_image,
     powerType: row.power_type,
-    description: row.description
+    description: row.description,
+    sizes: row.sizes ? row.sizes.split(",").map((s) => s.trim()).filter(Boolean) : [],
+    colorVariants: row.color_variants ? JSON.parse(row.color_variants) : [],
+    stockStatus: row.stock_status || "in_stock"
   };
 }
 

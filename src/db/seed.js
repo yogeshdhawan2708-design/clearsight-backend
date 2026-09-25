@@ -9,7 +9,13 @@ const products = [
     image: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=600&h=600&fit=crop",
     overlay_image: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=600&h=600&fit=crop",
     power_type: "single-vision",
-    description: "A classic round acetate frame with a warm tortoise finish. Lightweight build suited for all-day wear."
+    description: "A classic round acetate frame with a warm tortoise finish. Lightweight build suited for all-day wear.",
+    sizes: "S,M,L",
+    color_variants: JSON.stringify([
+      { name: "Tortoise Brown", hex: "#6b4a2f", image: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=600&h=600&fit=crop", stock: "in_stock" },
+      { name: "Matte Black", hex: "#1a1a1a", image: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=600&h=600&fit=crop", stock: "few_left" }
+    ]),
+    stock_status: "in_stock"
   },
   {
     id: "eg-002", name: "Crestline Rectangle", category: "Eyeglasses", shape: "Rectangle",
@@ -79,12 +85,19 @@ const products = [
 function runSeed() {
   const insert = db.prepare(`
     INSERT OR REPLACE INTO products
-    (id, name, category, shape, frame_material, gender, price, mrp, color, rating, reviews, image, overlay_image, power_type, description)
-    VALUES (@id, @name, @category, @shape, @frame_material, @gender, @price, @mrp, @color, @rating, @reviews, @image, @overlay_image, @power_type, @description)
+    (id, name, category, shape, frame_material, gender, price, mrp, color, rating, reviews, image, overlay_image, power_type, description, sizes, color_variants, stock_status)
+    VALUES (@id, @name, @category, @shape, @frame_material, @gender, @price, @mrp, @color, @rating, @reviews, @image, @overlay_image, @power_type, @description, @sizes, @color_variants, @stock_status)
   `);
 
   const insertMany = db.transaction((rows) => {
-    for (const row of rows) insert.run(row);
+    for (const row of rows) {
+      insert.run({
+        sizes: "S,M,L",
+        color_variants: null,
+        stock_status: "in_stock",
+        ...row
+      });
+    }
   });
 
   insertMany(products);
