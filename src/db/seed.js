@@ -15,7 +15,15 @@ const products = [
       { name: "Tortoise Brown", hex: "#6b4a2f", image: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=600&h=600&fit=crop", stock: "in_stock" },
       { name: "Matte Black", hex: "#1a1a1a", image: "https://images.unsplash.com/photo-1577803645773-f96470509666?w=600&h=600&fit=crop", stock: "few_left" }
     ]),
-    stock_status: "in_stock"
+    stock_status: "in_stock",
+    images: JSON.stringify([
+      "https://images.unsplash.com/photo-1577803645773-f96470509666?w=800&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?w=800&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1508296695146-257a814070b4?w=800&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=800&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=800&h=800&fit=crop",
+      "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&h=800&fit=crop"
+    ])
   },
   {
     id: "eg-002", name: "Crestline Rectangle", category: "Eyeglasses", shape: "Rectangle",
@@ -85,8 +93,8 @@ const products = [
 function runSeed() {
   const insert = db.prepare(`
     INSERT OR REPLACE INTO products
-    (id, name, category, shape, frame_material, gender, price, mrp, color, rating, reviews, image, overlay_image, power_type, description, sizes, color_variants, stock_status)
-    VALUES (@id, @name, @category, @shape, @frame_material, @gender, @price, @mrp, @color, @rating, @reviews, @image, @overlay_image, @power_type, @description, @sizes, @color_variants, @stock_status)
+    (id, name, category, shape, frame_material, gender, price, mrp, color, rating, reviews, image, overlay_image, power_type, description, sizes, color_variants, stock_status, images)
+    VALUES (@id, @name, @category, @shape, @frame_material, @gender, @price, @mrp, @color, @rating, @reviews, @image, @overlay_image, @power_type, @description, @sizes, @color_variants, @stock_status, @images)
   `);
 
   const insertMany = db.transaction((rows) => {
@@ -95,6 +103,7 @@ function runSeed() {
         sizes: "S,M,L",
         color_variants: null,
         stock_status: "in_stock",
+        images: null,
         ...row
       });
     }

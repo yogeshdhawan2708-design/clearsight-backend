@@ -36,7 +36,8 @@ db.exec(`
     description TEXT,
     sizes TEXT DEFAULT 'S,M,L',
     color_variants TEXT,
-    stock_status TEXT DEFAULT 'in_stock'
+    stock_status TEXT DEFAULT 'in_stock',
+    images TEXT
   );
 
   CREATE TABLE IF NOT EXISTS cart_items (

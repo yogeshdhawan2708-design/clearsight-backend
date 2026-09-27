@@ -18,15 +18,16 @@ router.post("/products", (req, res) => {
   }
   db.prepare(
     `INSERT OR REPLACE INTO products
-     (id, name, category, shape, frame_material, gender, price, mrp, color, rating, reviews, image, overlay_image, power_type, description, sizes, color_variants, stock_status)
-     VALUES (@id, @name, @category, @shape, @frame_material, @gender, @price, @mrp, @color, @rating, @reviews, @image, @overlay_image, @power_type, @description, @sizes, @color_variants, @stock_status)`
+     (id, name, category, shape, frame_material, gender, price, mrp, color, rating, reviews, image, overlay_image, power_type, description, sizes, color_variants, stock_status, images)
+     VALUES (@id, @name, @category, @shape, @frame_material, @gender, @price, @mrp, @color, @rating, @reviews, @image, @overlay_image, @power_type, @description, @sizes, @color_variants, @stock_status, @images)`
   ).run({
     shape: null, frame_material: null, gender: null, color: null, rating: 0, reviews: 0,
     image: null, overlay_image: null, power_type: null, description: null,
     sizes: "S,M,L", stock_status: "in_stock",
     ...p,
     stock_status: p.stockStatus || p.stock_status || "in_stock",
-    color_variants: p.colorVariants ? JSON.stringify(p.colorVariants) : null
+    color_variants: p.colorVariants ? JSON.stringify(p.colorVariants) : null,
+    images: p.images ? JSON.stringify(p.images) : null
   });
   res.status(201).json({ product: db.prepare("SELECT * FROM products WHERE id = ?").get(p.id) });
 });
@@ -39,13 +40,14 @@ router.patch("/products/:id", (req, res) => {
     ...req.body,
     id: req.params.id,
     stock_status: req.body.stockStatus || req.body.stock_status || existing.stock_status,
-    color_variants: req.body.colorVariants ? JSON.stringify(req.body.colorVariants) : existing.color_variants
+    color_variants: req.body.colorVariants ? JSON.stringify(req.body.colorVariants) : existing.color_variants,
+    images: req.body.images ? JSON.stringify(req.body.images) : existing.images
   };
   db.prepare(
     `UPDATE products SET name=@name, category=@category, shape=@shape, frame_material=@frame_material,
      gender=@gender, price=@price, mrp=@mrp, color=@color, image=@image, overlay_image=@overlay_image,
      power_type=@power_type, description=@description, sizes=@sizes, color_variants=@color_variants,
-     stock_status=@stock_status WHERE id=@id`
+     stock_status=@stock_status, images=@images WHERE id=@id`
   ).run(merged);
   res.json({ product: db.prepare("SELECT * FROM products WHERE id = ?").get(req.params.id) });
 });
